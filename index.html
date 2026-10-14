@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Iringan String</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3eee8;--panel:#fffaf3;--ink:#2a1f2d;--mute:#7b6c7d;--line:#d9cdc0;--acc:#a8344f;--accink:#fff;--brass:#b08a3e;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1524;--panel:#271d31;--ink:#f1e8de;--mute:#a597a8;--line:#43364f;--acc:#e0627f;--accink:#1c1524;--brass:#d9b46a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1c1524;--panel:#271d31;--ink:#f1e8de;--mute:#a597a8;--line:#43364f;--acc:#e0627f;--accink:#1c1524;--brass:#d9b46a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:1120px;margin:0 auto;padding:20px 16px 40px}
+h1{font:700 30px/1.15 Fraunces,Georgia,serif;margin:4px 0 4px}
+p.sub{margin:0 0 18px;color:var(--mute)}
+.layout{display:grid;gap:14px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:900px){.layout{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);align-items:start}}
+.col{display:flex;flex-direction:column;gap:14px;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+details.panel>summary{list-style:none;cursor:pointer;font-weight:700;display:flex;justify-content:space-between;align-items:center;min-height:32px}
+details.panel>summary::-webkit-details-marker{display:none}
+details.panel>summary::after{content:"";width:8px;height:8px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:rotate(45deg);margin-right:4px;transition:transform .15s}
+details.panel[open]>summary::after{transform:rotate(-135deg)}
+details.panel[open]>summary{margin-bottom:12px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+label{font-size:14px;color:var(--mute)}
+select,button{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:44px}
+button{cursor:pointer}
+button:focus-visible,select:focus-visible,summary:focus-visible{outline:3px solid var(--brass);outline-offset:2px}
+.now{text-align:center;padding:10px}
+.now .name{font:700 64px/1 Fraunces,Georgia,serif}
+.now .deg{color:var(--mute);margin-top:6px}
+.cam{position:relative;border-radius:10px;overflow:hidden;background:#000;aspect-ratio:4/3;margin:12px 0 0}
+.cam video,.cam canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;transform:scaleX(-1)}
+.pads{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+@media (min-width:560px){.pads{grid-template-columns:repeat(7,1fr)}}
+button[aria-pressed="true"]{background:var(--acc);color:var(--accink);border-color:var(--acc)}
+.pads button{padding:12px 0;font:700 20px Fraunces,Georgia,serif;min-width:0}
+.pads button small{display:block;font:12px system-ui,sans-serif;color:var(--mute)}
+.pads button.pre{border-color:var(--mute)}
+.pads button.hint{border-color:var(--brass);box-shadow:inset 0 0 0 2px var(--brass)}
+.pads button.on{background:var(--acc);color:var(--accink);border-color:var(--acc)}
+.pads button.on small{color:var(--accink)}
+.edit{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.edit span{width:22px;color:var(--mute);text-align:right}
+.edit select{flex:1;min-width:0}
+.help{font-size:14px;color:var(--mute);margin:10px 0 0}
+.warn{color:var(--acc);font-size:14px;margin:8px 0 0}
+.guide{margin:0;padding-left:20px;font-size:15px}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<h1>Iringan String</h1>
+<p class="sub">Pilih progresi, lalu mainkan 7 akor dengan klik, keyboard, atau jari.</p>
+
+<div class="layout">
+ <div class="col">
+  <details class="panel" open>
+   <summary>Akor sekarang</summary>
+   <div class="now" aria-live="polite">
+    <div class="name" id="name">—</div>
+    <div class="deg" id="deg">Belum ada akor yang dibunyikan</div>
+   </div>
+  </details>
+
+  <details class="panel" open>
+   <summary>Mainkan</summary>
+   <div class="row"><button id="camBtn">Nyalakan kamera</button><button id="flipBtn" aria-pressed="false">Balik sifat</button><button id="stop">Berhenti</button></div>
+   <div class="cam" id="camBox" hidden><video id="vid" playsinline muted></video><canvas id="ov" width="640" height="480"></canvas></div>
+   <p class="help" id="camst">Kamera mati. Akor tetap bisa dimainkan dengan klik atau keyboard.</p>
+   <div class="pads" id="pads"></div>
+   <p class="help">Keyboard: 1-7 = pilih akor, Shift + angka = balik sifat (mayor/minor), Esc = berhenti. Garis tegas = akor yang dipakai progresi, bingkai emas = saran akor berikutnya.</p>
+  </details>
+ </div>
+
+ <div class="col">
+  <details class="panel" open>
+   <summary>Pengaturan</summary>
+   <div class="row">
+    <label for="key">Kunci</label><select id="key"></select>
+    <label for="preset">Progresi</label><select id="preset"></select>
+    <label for="snd">Warna suara</label><select id="snd"></select>
+    <label for="hand">Tangan pemilih akor</label><select id="hand"><option value="kanan">Kanan</option><option value="kiri">Kiri</option></select>
+    <label for="vol">Volume</label><input id="vol" type="range" min="-30" max="0" value="-12">
+   </div>
+   <p class="warn" id="warn" hidden>Tone.js gagal dimuat. Periksa koneksi internet lalu muat ulang.</p>
+  </details>
+
+  <details class="panel" open>
+   <summary>Ubah akor</summary>
+   <div class="row" style="margin-bottom:10px"><button id="reset">Kembalikan ke progresi</button></div>
+   <div id="edit"></div>
+  </details>
+
+  <details class="panel">
+   <summary>Cara memakai jari</summary>
+   <ol class="guide">
+    <li>Telunjuk</li>
+    <li>Telunjuk + tengah</li>
+    <li>Telunjuk + tengah + manis</li>
+    <li>Telunjuk + tengah + manis + kelingking</li>
+    <li>Kelima jari</li>
+    <li>Jempol</li>
+    <li>Jempol + telunjuk</li>
+   </ol>
+   <p class="help"><strong>Tangan kedua dengan satu telunjuk terangkat = balik sifat akor</strong> (mayor jadi minor, minor jadi mayor, dim jadi mayor). Contoh: 4 jari = F, 4 jari + telunjuk tangan kedua = Fm. Tangan pemilih akor (kanan atau kiri) diatur di Pengaturan. Jika hanya satu tangan terlihat, tangan itu memilih akor, di sisi mana pun.</p>
+   <p class="help"><strong>Tangan mengepal = berhenti.</strong> Jika tangan hilang dari layar, akor terakhir tetap ditahan. Jari harus stabil sekitar sepertiga detik sebelum akor berganti.</p>
+  </details>
+ </div>
+</div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+<script>
+const NOTE=['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const OFF=[0,2,4,5,7,9,11], ROM=['I','II','III','IV','V','VI','VII'];
+const DIA=['maj','min','min','maj','maj','min','dim'];
+const Q={maj:{i:[0,4,7],s:''},min:{i:[0,3,7],s:'m'},dim:{i:[0,3,6],s:'dim'},'7':{i:[0,4,7,10],s:'7'},maj7:{i:[0,4,7,11],s:'maj7'},min7:{i:[0,3,7,10],s:'m7'},sus4:{i:[0,5,7],s:'sus4'}};
+const QN={maj:'mayor',min:'minor',dim:'dim','7':'7',maj7:'maj7',min7:'m7',sus4:'sus4'};
+const P=a=>a.map(([d,q])=>({d,q}));
+const PRESETS={
+ 'Pop: I - V - vi - IV':P([[0,'maj'],[4,'maj'],[5,'min'],[3,'maj']]),
+ 'Klasik: I - IV - V - I':P([[0,'maj'],[3,'maj'],[4,'maj'],[0,'maj']]),
+ 'Gaya 50-an: I - vi - IV - V':P([[0,'maj'],[5,'min'],[3,'maj'],[4,'maj']]),
+ 'Sendu: vi - IV - I - V':P([[5,'min'],[3,'maj'],[0,'maj'],[4,'maj']]),
+ 'Jazz: ii - V - I':P([[1,'min7'],[4,'7'],[0,'maj7']])
+};
+const SOUNDS={
+ 'Hangat':{osc:{type:'fatsawtooth',count:3,spread:25},cut:1400,att:.5},
+ 'Cerah':{osc:{type:'fatsawtooth',count:3,spread:30},cut:4200,att:.35},
+ 'Lembut':{osc:{type:'fattriangle',count:3,spread:20},cut:2500,att:.6},
+ 'Orkestra':{osc:{type:'fatsawtooth',count:5,spread:40},cut:2800,att:.7}
+};
+const $=id=>document.getElementById(id);
+const FLIP={maj:'min',min:'maj',dim:'maj','7':'min7',maj7:'min7',min7:'maj7',sus4:'min'};
+let keyI=0, slots=[], cur=-1, curFlip=false, flipOn=false, synth=null, lp=null, ready=false;
+
+function chordOf(d,q){return NOTE[(keyI+OFF[d])%12]+Q[q].s}
+function notes(d,q,o){
+ const base=48+keyI+OFF[d]+(o?12:0);
+ return [base-12,...Q[q].i.map(x=>base+x),base+12].map(x=>Tone.Frequency(x,'midi').toNote());
+}
+function setup(){
+ if(typeof Tone==='undefined'){$('warn').hidden=false;return}
+ const rev=new Tone.Reverb({decay:4,wet:.35}).toDestination();
+ const ch=new Tone.Chorus(3,2.5,.6).start().connect(rev);
+ lp=new Tone.Filter(1400,'lowpass').connect(ch);
+ synth=new Tone.PolySynth(Tone.Synth,{oscillator:{type:'fatsawtooth',count:3,spread:25},envelope:{attack:.5,decay:.3,sustain:.85,release:1.6},volume:-12}).connect(lp);
+ synth.maxPolyphony=12;
+ ready=true;applySound();
+}
+function applySound(){
+ if(!ready)return;
+ const s=SOUNDS[$('snd').value];
+ synth.set({oscillator:s.osc,envelope:{attack:s.att}});
+ lp.frequency.value=s.cut;
+}
+async function play(i,f){
+ const s=slots[i],q=f?FLIP[s.q]:s.q;cur=i;curFlip=!!f;render();
+ $('name').textContent=chordOf(s.d,q);
+ $('deg').textContent='Akor '+(i+1)+' · derajat '+ROM[s.d]+' · '+QN[q]+(f?' · sifat dibalik':'');
+ if(typeof Tone==='undefined')return;
+ await Tone.start();
+ synth.volume.value=+$('vol').value;
+ synth.releaseAll();
+ synth.triggerAttack(notes(s.d,q,s.o));
+}
+function stop(){if(ready)synth.releaseAll();$('name').textContent='—';$('deg').textContent='Belum ada akor yang dibunyikan';cur=-1;render()}
+
+function build(){
+ slots=[0,1,2,3,4,5,6].map(d=>({d,q:DIA[d]}));
+ PRESETS[$('preset').value].forEach(s=>{slots[s.d].q=s.q;slots[s.d].p=1});
+ cur=-1;render();
+}
+function render(){
+ const pr=PRESETS[$('preset').value];let hint=-1;
+ if(cur>=0){const k=pr.findIndex(s=>s.d===slots[cur].d);if(k>=0)hint=pr[(k+1)%pr.length].d}
+ $('pads').innerHTML='';
+ slots.forEach((s,i)=>{
+  const b=document.createElement('button');
+  const qq=(i===cur&&curFlip)?FLIP[s.q]:s.q;
+  b.innerHTML=chordOf(s.d,qq)+'<small>'+(i+1)+' · '+ROM[s.d]+'</small>';
+  if(i===cur)b.className='on';else if(i===hint)b.className='hint';else if(s.p)b.className='pre';
+  b.onclick=()=>play(i,flipOn);$('pads').appendChild(b);
+ });
+ const box=$('edit');box.innerHTML='';
+ slots.forEach((s,i)=>{
+  const row=document.createElement('div');row.className='edit';
+  const n=document.createElement('span');n.textContent=i+1;
+  const sd=document.createElement('select');sd.setAttribute('aria-label','Derajat akor '+(i+1));
+  ROM.forEach((r,d)=>sd.add(new Option(r+' ('+NOTE[(keyI+OFF[d])%12]+')',d,false,d===s.d)));
+  sd.onchange=()=>{s.d=+sd.value;s.q=DIA[s.d];render()};
+  const sq=document.createElement('select');sq.setAttribute('aria-label','Jenis akor '+(i+1));
+  Object.keys(Q).forEach(k=>sq.add(new Option(QN[k],k,false,k===s.q)));
+  sq.onchange=()=>{s.q=sq.value;render()};
+  row.append(n,sd,sq);box.appendChild(row);
+ });
+}
+
+NOTE.forEach((n,i)=>$('key').add(new Option(n+' mayor',i)));
+Object.keys(PRESETS).forEach(k=>$('preset').add(new Option(k,k)));
+Object.keys(SOUNDS).forEach(k=>$('snd').add(new Option(k,k)));
+$('key').onchange=()=>{keyI=+$('key').value;stop()};
+$('preset').onchange=()=>{stop();build()};
+$('snd').onchange=applySound;
+$('flipBtn').onclick=()=>{flipOn=!flipOn;$('flipBtn').setAttribute('aria-pressed',flipOn)};
+$('reset').onclick=()=>{stop();build()};
+$('vol').oninput=()=>{if(ready)synth.volume.value=+$('vol').value};
+document.addEventListener('keydown',e=>{
+ if(['SELECT','INPUT'].includes(e.target.tagName)&&e.key!=='Escape')return;
+ if(e.key==='Escape'){stop();stable=-2;return}
+ const m=/^Digit([1-7])$/.exec(e.code);if(m)play(+m[1]-1,e.shiftKey);
+});
+setup();build();
+</script>
+
+<script>
+const VER='0.10.14',CDN='https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@'+VER;
+const MODEL='https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+let lm=null,stream=null,camOn=false,lastT=-1,cand=-2,candN=0,stable=-2;
+const vid=$('vid'),cv=$('ov'),cx=cv.getContext('2d'),st=$('camst');
+const TIP=[8,12,16,20],PIP=[6,10,14,18];
+const dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const THUMB_T=0.45; // makin besar = jempol harus lebih lebar agar terbaca terangkat
+function pose(h){const sz=dist(h[0],h[9]);let k=(dist(h[4],h[5])/sz>THUMB_T&&dist(h[4],h[17])>dist(h[3],h[17]))?'1':'0';for(let i=0;i<4;i++)k+=dist(h[TIP[i]],h[0])>dist(h[PIP[i]],h[0])*1.05?'1':'0';return k}
+// urutan: jempol, telunjuk, tengah, manis, kelingking
+const FLIP_POSE='01000'; // bentuk tangan kedua yang membalik sifat akor (telunjuk saja)
+const POSE={'01000':0,'01100':1,'01110':2,'01111':3,'11111':4,'10000':5,'11000':6,'11100':7};
+function loop(){
+ if(!camOn)return;
+ if(vid.readyState>=2&&vid.currentTime!==lastT){
+  lastT=vid.currentTime;
+  const hands=lm.detectForVideo(vid,performance.now()).landmarks;
+  cx.clearRect(0,0,cv.width,cv.height);
+  hands.forEach(h=>h.forEach(p=>{cx.beginPath();cx.arc(p.x*cv.width,p.y*cv.height,4,0,7);cx.fillStyle='#e0627f';cx.fill()}));
+  let val=-2,msg='Tangan tidak terlihat';
+  if(hands.length){
+   let ci=0;
+   if(hands.length>1){const right=(1-hands[0][0].x)>(1-hands[1][0].x)?0:1;ci=$('hand').value==='kanan'?right:1-right}
+   const flip=hands.length>1&&pose(hands[1-ci])===FLIP_POSE,k=pose(hands[ci]),n=k in POSE?POSE[k]:-3;
+   val=k==='00000'?-1:(n>=0&&n<7?n+(flip?10:0):-3);
+   msg='Bentuk jari: '+(val>=0?'akor '+((val%10)+1)+(flip?' (dibalik oleh telunjuk tangan kedua)':''):val===-1?'terkepal (berhenti)':'tidak dikenali')+' ['+k+']';
+  }
+  st.textContent=msg;
+  if(val===cand)candN++;else{cand=val;candN=1}
+  const need=cand===-1?8:5;
+  if(candN>=need&&cand!==stable){stable=cand;if(cand>=0)play(cand%10,cand>=10);else if(cand===-1)stop()}
+ }
+ requestAnimationFrame(loop);
+}
+function stopCam(){camOn=false;if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;$('camBox').hidden=true;$('camBtn').textContent='Nyalakan kamera';st.textContent='Kamera mati.'}
+$('stop').onclick=()=>{stop();stable=-2};
+$('camBtn').onclick=async()=>{
+ if(camOn){stopCam();return}
+ if(typeof Tone!=='undefined')await Tone.start();
+ st.textContent='Memuat deteksi tangan…';
+ try{
+  if(!lm){
+   const v=await import(CDN+'/vision_bundle.mjs'),fs=await v.FilesetResolver.forVisionTasks(CDN+'/wasm');
+   for(const dl of ['GPU','CPU']){try{lm=await v.HandLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:MODEL,delegate:dl},runningMode:'VIDEO',numHands:2});break}catch(e){if(dl==='CPU')throw e}}
+  }
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:640,height:480},audio:false});
+  vid.srcObject=stream;await vid.play();
+  $('camBox').hidden=false;$('camBtn').textContent='Matikan kamera';
+  stable=-2;cand=-2;candN=0;camOn=true;loop();
+ }catch(e){stopCam();st.textContent='Kamera atau model gagal dimuat ('+e.message+'). Pastikan ada kamera yang menyala, izinkan akses kamera, dan periksa koneksi internet.'}
+};
+</script>
+</body>
+</html>
